@@ -1,51 +1,95 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#define BUFFER_SIZE 3
 
-char	*ft_append(char *s, char c)
+int	ft_strlen(char *str)
 {
-	char	*str;
-	int		idx;
+	int	idx;
 
 	idx = 0;
-	while (s[idx])
+	while (str[idx])
 		idx++;
-	if (!(str = malloc(sizeof(char) * (idx + 2))))
-		return (0);
-	idx = 0;
-	while (s[idx])
-	{
-		str[idx] = s[idx];
-		idx++;
-	}
-	str[idx] = c;
-	str[idx + 1] = 0;
-	free(s);
-	return (str);
+	return (idx);
 }
 
-int	get_next_line(char **line)
+char	*ft_strdup(char *str)
 {
-	char	buf;
-	int		ret;
+	char	*ret;
+	int		idx;
 
-	if (!line || !(*line = malloc(1)))
-		return (-1);
-	*line[0] = 0;
-	while ((ret = read(0, &buf, 1)) > 0)
+	ret = (char *)malloc(sizeof(char) * (ft_strlen(str) + 1));
+	if (!ret)
+		return (0);
+	idx = 0;
+	while (str[idx])
 	{
-		if (buf == '\n')
-			break ;
-		*line = ft_append(*line, buf);
+		ret[idx] = str[idx];
+		idx++;
 	}
 	return (ret);
 }
 
+char	*ft_strjoin(char *str, char *buf)
+{
+	char	*ret;
+	int		size;
+	int		r_idx;
+	int		idx;
+
+	if (!str)
+	{
+		ret = ft_strdup(buf);
+		return (ret);
+	}
+	size = ft_strlen(str) + ft_strlen(buf);
+	ret = (char *)malloc(sizeof(char) * (size + 1));
+	ret[size] = 0;
+	idx = 0;
+	r_idx = 0;
+	if (!ret)
+		return (0);
+	while (str[idx])
+	{
+		ret[r_idx] = str[idx];
+		idx++;
+		r_idx++;
+	}
+	free(str);
+	idx = 0;
+	while (buf[idx])
+	{
+		ret[r_idx] = buf[idx];
+		idx++;
+		r_idx++;
+	}
+	return (ret);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	*str = 0;
+	char		*buf;
+	char		*line;
+
+	if (fd < 0)
+		return (0);
+	buf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	buf[BUFFER_SIZE] = 0;
+	while (read(fd, buf, BUFFER_SIZE) > 0)
+	{
+		printf("buf : %s\n", buf);
+		str = ft_strjoin(str, buf);
+		printf("str : %s\n", str);
+	}
+}
+
 int	main(void)
 {
-	char	*line;
+	int fd;
 
-	while (get_next_line(&line))
-		printf("%s\n", line);
+	fd = open("test", O_RDONLY);
+	while (get_next_line(fd));
 	return (0);
 }
