@@ -2,7 +2,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#define BUFFER_SIZE 4
+#include "get_next_line.h"
+//#define BUFFER_SIZE 4
 
 int	ft_strlen(char *str)
 {
@@ -28,6 +29,7 @@ char	*ft_strdup(char *str)
 		ret[idx] = str[idx];
 		idx++;
 	}
+	ret[idx] = 0;
 	return (ret);
 }
 
@@ -45,11 +47,11 @@ char	*ft_strjoin(char *str, char *buf)
 	}
 	size = ft_strlen(str) + ft_strlen(buf);
 	ret = (char *)malloc(sizeof(char) * (size + 1));
+	if (!ret)
+		return (0);
 	ret[size] = 0;
 	idx = 0;
 	r_idx = 0;
-	if (!ret)
-		return (0);
 	while (str[idx])
 	{
 		ret[r_idx] = str[idx];
@@ -97,7 +99,7 @@ char	*make_line(char **str)
 		idx++;
 	}
 	ret[idx] = 0;
-	tmp = ft_strdup(*str + (s_idx + 1));
+	tmp = ft_strdup((*str) + (s_idx + 1));
 	free(*str);
 	*str = tmp;
 	return (ret);	
@@ -110,49 +112,39 @@ char	*get_next_line(int fd)
 	char		*line;
 	int			size;
 
-	if (fd < 0 | BUFFER_SIZE <= 0)
+	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (0);
 	buf = (char *)malloc(sizeof(char) * (BUFFER_SIZE + 1));
 	if (!buf)
 		return (0);
 	size = read(fd, buf, BUFFER_SIZE);
-	if (size <= 0)
-	{
-		free(buf);
-		return (0);
-	}
 	while (size > 0)
 	{
 		buf[size] = 0;
 		str = ft_strjoin(str, buf);
 		if (str_in_nl(str) >= 0)
-			break ;
+		{
+			free(buf);
+			line = make_line(&str);
+			return (line);
+		}
 		size = read(fd, buf, BUFFER_SIZE);
 	}
 	free(buf);
-	if (size == 0)
+	if (size < 0)
+		return (0);
+	else if (str && str_in_nl(str) >= 0)
 	{
-		free(line);
-		line = 0;
-		line = str;
+		line = make_line(&str);
+		return (line);
+	}
+	else if (str && *str != 0)
+	{
+		line = ft_strdup(str);
+		free(str);
 		str = 0;
 		return (line);
 	}
-	line = make_line(&str);
-	return (line);
-}
-
-int	main(void)
-{
-	int fd;
-	char *line;
-
-	fd = open("test2", O_RDONLY);
-	while ((line = get_next_line(fd)))
-	{
-		printf("line : %s\n", line);
-		free(line);
-	}
-//	printf("line : %s\n", line);
-	system("leaks a.out | grep leaked");
+	free(str);
+	return (0);
 }

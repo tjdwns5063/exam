@@ -128,9 +128,14 @@ int	ft_printf(char *str, ...)
 				ret += make_d(ap, &info);
 			else if (info.spc == 'x')
 				ret += make_x(ap, &info);
+			else
+			{
+				ret += 1;
+				write(1, &info.spc, 1);
+			}
 			info.spc = 0;
 			info.size = 0;
-			str = str + 2;
+			str++;
 		}
 		else
 		{
@@ -139,14 +144,17 @@ int	ft_printf(char *str, ...)
 			ret++;
 		}
 	}
+	va_end(ap);
 	return (ret);
 }
 
 #include <limits.h>
+#include <assert.h>
 int main()
 {
-	int	ret;
-
+	int	ret1;
+	int	ret2;
+/*
 	ret = printf("abc%dabc\n", INT_MAX);
 	ft_printf("%d\n", ret);
 	ret = ft_printf("abc%dabc\n", INT_MAX);
@@ -199,5 +207,9 @@ int main()
 	ft_printf("%d\n", ret);
 	ret = ft_printf("%x %d %s\n", INT_MIN, -145, "\t");
 	ft_printf("%d\n", ret);
-	system("leaks a.out | grep leaked");
+*/
+	//printf("%%%", 1);
+	ft_printf("%s\n", "abc");
+	printf("%%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %c%%", 'A', "42", 42, 42 ,42 , 42, 42, 'B', "-42", -42, -42 ,-42 ,-42, 42, 'C', "0", 0, 0 ,0 ,0, 42, 0);
+	ft_printf("%%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %c%%", 'A', "42", 42, 42 ,42 , 42, 42, 'B', "-42", -42, -42 ,-42 ,-42, 42, 'C', "0", 0, 0 ,0 ,0, 42, 0);
 }
