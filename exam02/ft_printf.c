@@ -36,7 +36,7 @@ int	cnt_num_len(long n, int base_len)
 		num /= base_len;
 		ret++;
 	}
-	return (ret + (ret == 0));
+	return (ret + (num == 0));
 }
 
 int	make_s(va_list ap, t_info *info)
