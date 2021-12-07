@@ -1,12 +1,10 @@
-#include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
+#include <stdarg.h>
 #define base "0123456789"
 #define base_l "0123456789abcdef"
 
-
-typedef struct s_info
+typedef struct	s_info
 {
 	char	spc;
 	int		size;
@@ -24,19 +22,50 @@ int	ft_strlen(char *str)
 
 int	cnt_num_len(long n, int base_len)
 {
-	long num;
-	int	ret;
+	long	num;
+	int		ret;
 
 	num = n;
-	if (num < 0)
-		num *= -1;
 	ret = 0;
+	if (n < 0)
+		num *= -1;
 	while (num > 0)
 	{
 		num /= base_len;
 		ret++;
 	}
-	return (ret + (num == 0));
+	return (ret + (n == 0));
+}
+
+char	*ft_xtoa(long n, int base_len, int size)
+{
+	long	num;
+	char	*ret;
+	int		idx;
+
+	num = n;
+	ret = (char *)malloc(sizeof(char) * (size + 1));
+	if (!ret)
+		return (0);
+	ret[size] = 0;
+	idx = size - 1;
+	if (n < 0)
+	{
+		num *= -1;
+		ret[0] = '-';
+	}
+	else if (n == 0)
+		ret[0] = '0';
+	while (num > 0)
+	{
+		if (base_len == 10)
+			ret[idx] = base[num % base_len];
+		else if (base_len == 16)
+			ret[idx] = base_l[num % base_len];
+		idx--;
+		num /= base_len;
+	}
+	return (ret);
 }
 
 int	make_s(va_list ap, t_info *info)
@@ -44,10 +73,10 @@ int	make_s(va_list ap, t_info *info)
 	char	*s;
 
 	s = va_arg(ap, char *);
-	if (s == 0)
+	if (!s)
 	{
-		info->size = 6;
 		s = "(null)";
+		info->size = 6;
 	}
 	else
 		info->size = ft_strlen(s);
@@ -57,27 +86,12 @@ int	make_s(va_list ap, t_info *info)
 
 int	make_d(va_list ap, t_info *info)
 {
-	long	d;
+	int		d;
 	char	*str;
-	int		idx;
 
 	d = va_arg(ap, int);
 	info->size = cnt_num_len(d, 10) + (d < 0);
-	str = (char *)malloc(sizeof(char) * (info->size + 1));
-	str[info->size] = 0;
-	if (d < 0)
-		str[0] = '-';
-	if (d == 0)
-		str[0] = '0';
-	if (d <= -1)
-		d *= -1;
-	idx = info->size - 1;
-	while (d > 0)
-	{
-		str[idx] = base[d % 10];
-		d /= 10;
-		idx--;
-	}
+	str = ft_xtoa(d, 10, info->size);
 	write(1, str, info->size);
 	free(str);
 	return (info->size);
@@ -87,41 +101,32 @@ int	make_x(va_list ap, t_info *info)
 {
 	unsigned int	x;
 	char			*str;
-	int				idx;
 
 	x = va_arg(ap, unsigned int);
 	info->size = cnt_num_len(x, 16);
-	str = (char *)malloc(sizeof(char) * (info->size + 1));
-	str[info->size] = 0;
-	if (x == 0)
-		str[0] = '0';
-	idx = info->size - 1;
-	while (x > 0)
-	{
-		str[idx] = base_l[x % 16];
-		x /= 16;
-		idx--;
-	}
+	str = ft_xtoa(x, 16, info->size);
 	write(1, str, info->size);
 	free(str);
 	return (info->size);
 }
 
-int	ft_printf(char *str, ...)
+int	ft_printf(const char *str, ...)
 {
-	t_info	info;
-	va_list ap;
+	char	*s;
 	int		ret;
+	va_list	ap;
+	t_info	info;
 
-	va_start(ap, str);
+	s = (char *)str;
 	ret = 0;
+	va_start(ap, str);
 	info.spc = 0;
 	info.size = 0;
-	while (*str)
+	while (*s)
 	{
-		if (*str == '%')
+		if (*s == '%')
 		{
-			info.spc = *(str + 1);
+			info.spc = *(s + 1);
 			if (info.spc == 's')
 				ret += make_s(ap, &info);
 			else if (info.spc == 'd')
@@ -130,86 +135,20 @@ int	ft_printf(char *str, ...)
 				ret += make_x(ap, &info);
 			else
 			{
-				ret += 1;
 				write(1, &info.spc, 1);
+				ret++;
 			}
+			s = s + 2;
 			info.spc = 0;
 			info.size = 0;
-			str++;
 		}
 		else
 		{
-			write(1, &(*str), 1);
-			str++;
+			write(1, &(*s), 1);
 			ret++;
+			s++;
 		}
 	}
 	va_end(ap);
 	return (ret);
-}
-
-#include <limits.h>
-#include <assert.h>
-int main()
-{
-	int	ret1;
-	int	ret2;
-/*
-	ret = printf("abc%dabc\n", INT_MAX);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%dabc\n", INT_MAX);
-	ft_printf("%d\n", ret);
-	ret = printf("abc%dabc\n", INT_MIN);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%dabc\n", INT_MIN);
-	ft_printf("%d\n", ret);
-	ret = printf("abc%dabc\n", 0);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%dabc\n", 0);
-	ft_printf("%d\n", ret);
-	ret = printf("abc%dabc\n", -15);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%dabc\n", -15);
-	ft_printf("%d\n", ret);
-	ret = printf("abc%dabc\n", -1);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%dabc\n", -1);
-	ft_printf("%d\n", ret);
-	ret = printf("abc%dabc\n", 1);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%dabc\n", 1);
-	ft_printf("%d\n", ret);
-	ret = printf("abc%sabc\n", NULL);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("abc%sabc\n", NULL);
-	ft_printf("%d\n", ret);
-	ret = printf("%s %s horse\n", "my", "name is");
-	ft_printf("%d\n", ret);
-	ret = ft_printf("%s %s horse\n", "my", "name is");
-	ft_printf("%d\n", ret);
-	ret = printf("%x\n", 145);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("%x\n", 145);
-	ft_printf("%d\n", ret);
-	ret = printf("%x\n", INT_MAX);
-	ft_printf("%d\n", ret);
-	ret = ft_printf("%x\n", INT_MAX);
-	ft_printf("%d\n", ret);
-	ret = printf("%x %d %s\n", -145, -145, "145");
-	ft_printf("%d\n", ret);
-	ret = ft_printf("%x %d %s\n", -145, -145, "145");
-	ft_printf("%d\n", ret);
-	ret = printf("%x abc %d abc %s abc\n", -145, -145, "145");
-	ft_printf("%d\n", ret);
-	ret = ft_printf("%x abc %d abc %s abc\n", -145, -145, "145");
-	ft_printf("%d\n", ret);
-	ret = printf("%x %d %s\n", INT_MIN, -145, "\t");
-	ft_printf("%d\n", ret);
-	ret = ft_printf("%x %d %s\n", INT_MIN, -145, "\t");
-	ft_printf("%d\n", ret);
-*/
-	//printf("%%%", 1);
-	ft_printf("%s\n", "abc");
-	printf("%%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %c%%", 'A', "42", 42, 42 ,42 , 42, 42, 'B', "-42", -42, -42 ,-42 ,-42, 42, 'C', "0", 0, 0 ,0 ,0, 42, 0);
-	ft_printf("%%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %%%c%%%s%%%d%%%i%%%u%%%x%%%X%%%% %c%%", 'A', "42", 42, 42 ,42 , 42, 42, 'B', "-42", -42, -42 ,-42 ,-42, 42, 'C', "0", 0, 0 ,0 ,0, 42, 0);
 }
